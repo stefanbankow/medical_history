@@ -28,4 +28,10 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     
     @Query("SELECT COUNT(p) FROM Patient p WHERE p.familyDoctor.id = :doctorId")
     Long countByFamilyDoctorId(@Param("doctorId") Long doctorId);
+    
+    @Query("SELECT p.familyDoctor, COUNT(p) FROM Patient p " +
+           "WHERE p.familyDoctor.isFamilyDoctor = true " +
+           "GROUP BY p.familyDoctor " +
+           "ORDER BY COUNT(p) DESC")
+    List<Object[]> findFamilyDoctorPatientCounts();
 }

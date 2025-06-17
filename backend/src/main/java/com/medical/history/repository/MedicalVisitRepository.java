@@ -35,4 +35,15 @@ public interface MedicalVisitRepository extends JpaRepository<MedicalVisit, Long
     
     @Query("SELECT mv FROM MedicalVisit mv WHERE mv.diagnosis.id = :diagnosisId")
     List<MedicalVisit> findByDiagnosisId(@Param("diagnosisId") Long diagnosisId);
+    
+    @Query("SELECT mv.diagnosis, COUNT(mv) FROM MedicalVisit mv " +
+           "WHERE mv.diagnosis IS NOT NULL " +
+           "GROUP BY mv.diagnosis " +
+           "ORDER BY COUNT(mv) DESC")
+    List<Object[]> findDiagnosisCountReport();
+    
+    @Query("SELECT mv.doctor, COUNT(mv) FROM MedicalVisit mv " +
+           "GROUP BY mv.doctor " +
+           "ORDER BY COUNT(mv) DESC")
+    List<Object[]> findDoctorVisitCounts();
 }
