@@ -11,7 +11,7 @@ import java.util.Set;
 @Entity
 @Table(name = "diagnoses")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"medicalVisits"})
 public class Diagnosis extends BaseEntity {
     
     @NotBlank(message = "Diagnosis code is required")

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "medical_visits")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"patient", "doctor", "diagnosis", "sickLeave"})
 public class MedicalVisit extends BaseEntity {
     
     @NotNull(message = "Visit date is required")

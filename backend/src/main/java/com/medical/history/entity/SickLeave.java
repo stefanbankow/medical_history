@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "sick_leaves")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"medicalVisit"})
 public class SickLeave extends BaseEntity {
     
     @NotNull(message = "Start date is required")

@@ -11,7 +11,7 @@ import java.util.Set;
 @Entity
 @Table(name = "roles")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"users"})
 public class Role extends BaseEntity {
     
     @Enumerated(EnumType.STRING)

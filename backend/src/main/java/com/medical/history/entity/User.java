@@ -17,7 +17,7 @@ import java.util.Set;
            @UniqueConstraint(columnNames = "email")
        })
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"roles", "patient", "doctor"})
 public class User extends BaseEntity {
     
     @NotBlank(message = "Username is required")
