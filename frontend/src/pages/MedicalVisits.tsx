@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Alert, Chip } from '@mui/material';
 import { GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
-import { Edit, Delete, MedicalServices, Visibility } from '@mui/icons-material';
+import { Edit, Delete, Visibility } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
@@ -13,6 +13,7 @@ import {
 } from '../store/medicalVisitsApi';
 import { useGetPatientsQuery } from '../store/patientsApi';
 import { useGetDoctorsQuery } from '../store/doctorsApi';
+import { useGetDiagnosesQuery } from '../store/diagnosesApi';
 import { useAuth } from '../utils/auth';
 import { MedicalVisit } from '../types';
 import PageHeader from '../components/shared/PageHeader';
@@ -35,6 +36,7 @@ const MedicalVisits: React.FC = () => {
   const { data: visits = [], isLoading, error } = useGetMedicalVisitsQuery();
   const { data: patients = [] } = useGetPatientsQuery();
   const { data: doctors = [] } = useGetDoctorsQuery();
+  const { data: diagnoses = [] } = useGetDiagnosesQuery();
   const [createVisit, { isLoading: isCreating }] = useCreateMedicalVisitMutation();
   const [updateVisit, { isLoading: isUpdating }] = useUpdateMedicalVisitMutation();
   const [deleteVisit, { isLoading: isDeleting }] = useDeleteMedicalVisitMutation();
@@ -110,9 +112,15 @@ const MedicalVisits: React.FC = () => {
   const handleFormSubmit = async (data: MedicalVisitFormData) => {
     try {
       const visitData = {
-        ...data,
         visitDate: data.visitDate ? format(data.visitDate, 'yyyy-MM-dd') : '',
-        visitTime: data.visitTime ? format(data.visitTime, 'HH:mm') : undefined,
+        visitTime: data.visitTime ? format(data.visitTime, 'HH:mm:ss') : undefined,
+        symptoms: data.symptoms || '',
+        treatment: data.treatment || '',
+        prescribedMedication: data.prescribedMedication || '',
+        notes: data.notes || '',
+        patientId: data.patientId,
+        doctorId: data.doctorId,
+        diagnosisId: data.diagnosisId && data.diagnosisId > 0 ? data.diagnosisId : undefined,
       };
 
       if (editingVisit) {
@@ -236,7 +244,7 @@ const MedicalVisits: React.FC = () => {
           form={form}
           patients={patients}
           doctors={doctors}
-          diagnoses={[]} // TODO: Add diagnoses when available
+          diagnoses={diagnoses}
           isEditing={!!editingVisit}
           userRole={user?.roles[0] || ''}
           userId={user?.doctorId || user?.patientId}

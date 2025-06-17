@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,16 @@ import {
   Assignment as DiagnosisIcon,
   Medication as MedicationIcon,
   Notes as NotesIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useForm } from 'react-hook-form';
 
 import { MedicalVisit } from '../../types';
+import { useCreateSickLeaveMutation } from '../../store/sickLeavesApi';
+import { useAuth } from '../../utils/auth';
+import FormDialog from '../shared/FormDialog';
+import SickLeaveForm, { SickLeaveFormData } from '../forms/SickLeaveForm';
 
 interface MedicalVisitViewDialogProps {
   visit: MedicalVisit | null;
@@ -35,7 +41,48 @@ const MedicalVisitViewDialog: React.FC<MedicalVisitViewDialogProps> = ({
   open,
   onClose,
 }) => {
+  const { isDoctor, isAdmin } = useAuth();
+  const [sickLeaveFormOpen, setSickLeaveFormOpen] = useState(false);
+  const [createSickLeave, { isLoading: isCreatingSickLeave }] = useCreateSickLeaveMutation();
+  
+  const sickLeaveForm = useForm<SickLeaveFormData>({
+    defaultValues: {
+      startDate: new Date(),
+      durationDays: 1,
+      reason: '',
+      medicalVisitId: visit?.id || 0,
+    },
+  });
+
   if (!visit) return null;
+
+  const canAddSickLeave = (isDoctor() || isAdmin()) && !visit.sickLeave;
+
+  const handleAddSickLeave = () => {
+    sickLeaveForm.reset({
+      startDate: new Date(),
+      durationDays: 1,
+      reason: '',
+      medicalVisitId: visit.id,
+    });
+    setSickLeaveFormOpen(true);
+  };
+
+  const handleSickLeaveSubmit = async (data: SickLeaveFormData) => {
+    try {
+      const sickLeaveData = {
+        startDate: data.startDate ? format(data.startDate, 'yyyy-MM-dd') : '',
+        durationDays: data.durationDays,
+        reason: data.reason || '',
+        medicalVisitId: data.medicalVisitId,
+      };
+
+      await createSickLeave(sickLeaveData).unwrap();
+      setSickLeaveFormOpen(false);
+    } catch (error) {
+      console.error('Failed to create sick leave:', error);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -199,8 +246,32 @@ const MedicalVisitViewDialog: React.FC<MedicalVisitViewDialogProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
+        {canAddSickLeave && (
+          <Button
+            onClick={handleAddSickLeave}
+            variant="outlined"
+            startIcon={<AddIcon />}
+          >
+            Add Sick Leave
+          </Button>
+        )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      {/* Sick Leave Form Dialog */}
+      <FormDialog
+        open={sickLeaveFormOpen}
+        title="Add Sick Leave"
+        onClose={() => setSickLeaveFormOpen(false)}
+        onSubmit={sickLeaveForm.handleSubmit(handleSickLeaveSubmit)}
+        loading={isCreatingSickLeave}
+        submitText="Create Sick Leave"
+      >
+        <SickLeaveForm
+          form={sickLeaveForm}
+          medicalVisitId={visit.id}
+        />
+      </FormDialog>
     </Dialog>
   );
 };
