@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "medical_visits")
@@ -19,7 +19,7 @@ public class MedicalVisit extends BaseEntity {
     private LocalDate visitDate;
     
     @Column(name = "visit_time")
-    private LocalDateTime visitTime;
+    private LocalTime visitTime;
     
     @Column(name = "symptoms", columnDefinition = "TEXT")
     private String symptoms;
@@ -55,7 +55,7 @@ public class MedicalVisit extends BaseEntity {
     @PrePersist
     private void prePersist() {
         if (visitTime == null) {
-            visitTime = LocalDateTime.now();
+            visitTime = LocalTime.now();
         }
     }
 }

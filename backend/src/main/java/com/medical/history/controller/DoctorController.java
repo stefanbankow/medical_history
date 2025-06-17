@@ -23,7 +23,7 @@ public class DoctorController {
     private final DoctorService doctorService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     @Operation(summary = "Get all doctors")
     public ResponseEntity<List<DoctorDto>> getAllDoctors() {
         List<DoctorDto> doctors = doctorService.getAllDoctors();
@@ -31,7 +31,7 @@ public class DoctorController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     @Operation(summary = "Get doctor by ID")
     public ResponseEntity<DoctorDto> getDoctorById(@PathVariable Long id) {
         return doctorService.getDoctorById(id)

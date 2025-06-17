@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 public class MedicalVisitDto {
@@ -14,7 +14,7 @@ public class MedicalVisitDto {
     @NotNull(message = "Visit date is required")
     private LocalDate visitDate;
     
-    private LocalDateTime visitTime;
+    private LocalTime visitTime;
     
     private String symptoms;
     

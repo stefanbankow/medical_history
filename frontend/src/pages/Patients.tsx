@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
 import { 
-  useGetPatientsQuery, 
+  useGetPatientsQuery,
+  useGetPatientsByFamilyDoctorQuery, 
   useCreatePatientMutation, 
   useUpdatePatientMutation, 
   useDeletePatientMutation 
@@ -22,7 +23,7 @@ import PatientForm, { PatientFormData } from '../components/forms/PatientForm';
 import PatientViewDialog from '../components/dialogs/PatientViewDialog';
 
 const Patients: React.FC = () => {
-  const { user, isAdmin, isDoctor, isPatient } = useAuth();
+  const { user, isAdmin, isDoctor } = useAuth();
 
   const [formOpen, setFormOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -31,7 +32,28 @@ const Patients: React.FC = () => {
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
 
-  const { data: patients = [], isLoading, error } = useGetPatientsQuery();
+  // Use role-specific API calls
+  const { 
+    data: allPatients = [], 
+    isLoading: isLoadingAll, 
+    error: errorAll 
+  } = useGetPatientsQuery(undefined, { 
+    skip: !isAdmin() 
+  });
+  
+  const { 
+    data: doctorPatients = [], 
+    isLoading: isLoadingDoctor, 
+    error: errorDoctor 
+  } = useGetPatientsByFamilyDoctorQuery(user?.doctorId || 0, { 
+    skip: !isDoctor() || !user?.doctorId 
+  });
+
+  // Get the appropriate data based on role
+  const patients = isAdmin() ? allPatients : isDoctor() ? doctorPatients : [];
+  const isLoading = isAdmin() ? isLoadingAll : isDoctor() ? isLoadingDoctor : false;
+  const error = isAdmin() ? errorAll : isDoctor() ? errorDoctor : null;
+
   const { data: doctors = [] } = useGetDoctorsQuery();
   const [createPatient, { isLoading: isCreating }] = useCreatePatientMutation();
   const [updatePatient, { isLoading: isUpdating }] = useUpdatePatientMutation();
@@ -46,18 +68,6 @@ const Patients: React.FC = () => {
       familyDoctorId: 0,
     },
   });
-
-  // Filter patients based on user role
-  const filteredPatients = React.useMemo(() => {
-    if (isAdmin()) {
-      return patients;
-    } else if (isDoctor() && user?.doctorId) {
-      return patients.filter((p: Patient) => p.familyDoctorId === user.doctorId);
-    } else if (isPatient() && user?.patientId) {
-      return patients.filter((p: Patient) => p.id === user.patientId);
-    }
-    return [];
-  }, [patients, user, isAdmin, isDoctor, isPatient]);
 
   const handleCreate = () => {
     setEditingPatient(null);
@@ -193,6 +203,14 @@ const Patients: React.FC = () => {
     }] : []),
   ];
 
+  if (!isAdmin() && !isDoctor()) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">You don't have permission to access this page.</Alert>
+      </Box>
+    );
+  }
+
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
@@ -211,7 +229,7 @@ const Patients: React.FC = () => {
       />
 
       <DataTable
-        rows={filteredPatients}
+        rows={patients}
         columns={columns}
         loading={isLoading}
       />

@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   People as PeopleIcon,
   LocalHospital as HospitalIcon,
   Assignment as AssignmentIcon,
@@ -26,6 +25,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout, selectCurrentUser } from '../store/authSlice';
+import { useAuth } from '../utils/auth';
 
 const drawerWidth = 240;
 
@@ -39,6 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
+  const { isAdmin, isDoctor, isPatient } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -49,13 +50,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Doctors', icon: <HospitalIcon />, path: '/doctors' },
-    { text: 'Patients', icon: <PeopleIcon />, path: '/patients' },
-    { text: 'Medical Visits', icon: <AssignmentIcon />, path: '/visits' },
-    { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
-  ];
+  // Define menu items based on user role
+  const getMenuItems = () => {
+    if (isAdmin()) {
+      return [
+        { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+        { text: 'Doctors', icon: <HospitalIcon />, path: '/doctors' },
+        { text: 'Patients', icon: <PeopleIcon />, path: '/patients' },
+        { text: 'Medical Visits', icon: <AssignmentIcon />, path: '/visits' },
+      ];
+    } else if (isDoctor()) {
+      return [
+        { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+        { text: 'Patients', icon: <PeopleIcon />, path: '/patients' },
+        { text: 'Medical Visits', icon: <AssignmentIcon />, path: '/visits' },
+      ];
+    } else if (isPatient()) {
+      return [
+        { text: 'My Medical Visits', icon: <AssignmentIcon />, path: '/visits' },
+        { text: 'Doctors', icon: <HospitalIcon />, path: '/doctors' },
+      ];
+    }
+
+    return [];
+  };
+
+  const menuItems = getMenuItems();
 
   const drawer = (
     <div>

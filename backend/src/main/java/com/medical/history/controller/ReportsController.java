@@ -111,4 +111,32 @@ public class ReportsController {
         ReportsService.DashboardStats stats = reportsService.getDashboardStats();
         return ResponseEntity.ok(stats);
     }
+    
+    @GetMapping("/patients-most-visits")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    public ResponseEntity<List<ReportsService.PatientVisitReport>> getPatientsWithMostVisits() {
+        List<ReportsService.PatientVisitReport> reports = reportsService.getPatientsWithMostVisits();
+        return ResponseEntity.ok(reports);
+    }
+    
+    @GetMapping("/insurance-stats")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    public ResponseEntity<ReportsService.InsuranceStats> getInsuranceStats() {
+        ReportsService.InsuranceStats stats = reportsService.getInsuranceStats();
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/sick-leaves-detailed-monthly")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    public ResponseEntity<List<ReportsService.SickLeaveDetailedReport>> getDetailedSickLeavesByMonth() {
+        List<ReportsService.SickLeaveDetailedReport> reports = reportsService.getDetailedSickLeavesByMonth();
+        return ResponseEntity.ok(reports);
+    }
+    
+    @GetMapping("/doctors-sick-leaves-detailed")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    public ResponseEntity<List<ReportsService.DoctorSickLeaveDetailedReport>> getDetailedDoctorSickLeaveStats() {
+        List<ReportsService.DoctorSickLeaveDetailedReport> reports = reportsService.getDetailedDoctorSickLeaveStats();
+        return ResponseEntity.ok(reports);
+    }
 }

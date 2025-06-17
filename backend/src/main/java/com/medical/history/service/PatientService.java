@@ -3,8 +3,10 @@ package com.medical.history.service;
 import com.medical.history.dto.PatientDto;
 import com.medical.history.entity.Doctor;
 import com.medical.history.entity.Patient;
+import com.medical.history.entity.User;
 import com.medical.history.repository.DoctorRepository;
 import com.medical.history.repository.PatientRepository;
+import com.medical.history.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class PatientService {
     
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
     
     public List<PatientDto> getAllPatients() {
         return patientRepository.findAll().stream()
@@ -77,6 +80,17 @@ public class PatientService {
         if (patientRepository.existsById(id)) {
             patientRepository.deleteById(id);
             return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Check if the authenticated user owns the patient record
+     */
+    public boolean isPatientOwner(Long patientId, String username) {
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isPresent() && user.get().getPatient() != null) {
+            return user.get().getPatient().getId().equals(patientId);
         }
         return false;
     }

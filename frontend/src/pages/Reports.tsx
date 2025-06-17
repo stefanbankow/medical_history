@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 
 import { useAuth } from '../utils/auth';
 import { useReportsData } from '../hooks/useReportsData';
@@ -13,7 +13,7 @@ import ReportsError from '../components/reports/ReportsError';
 import ReportsLoadingSkeleton from '../components/reports/ReportsLoadingSkeleton';
 
 const Reports: React.FC = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isDoctor } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [dateFrom, setDateFrom] = useState<Date | null>(
     new Date(new Date().getFullYear(), 0, 1)

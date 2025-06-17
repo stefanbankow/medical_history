@@ -11,9 +11,9 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { store } from "./store/store";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { restoreAuth, selectIsAuthenticated } from "./store/authSlice";
+import { useAuth } from "./utils/auth";
 import Layout from "./pages/Layout";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import Doctors from "./pages/Doctors";
 import Patients from "./pages/Patients";
 import MedicalVisits from "./pages/MedicalVisits";
@@ -29,6 +29,20 @@ const theme = createTheme({
     },
   },
 });
+
+// Component to handle role-based default routing
+function DefaultRoute() {
+  const { isAdmin, isDoctor, isPatient } = useAuth();
+  
+  if (isPatient()) {
+    return <Navigate to="/visits" replace />;
+  } else if (isAdmin() || isDoctor()) {
+    return <Navigate to="/reports" replace />;
+  }
+  
+  // Fallback
+  return <Navigate to="/visits" replace />;
+}
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -52,7 +66,7 @@ function AppContent() {
             isAuthenticated ? (
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<DefaultRoute />} />
                   <Route path="/doctors" element={<Doctors />} />
                   <Route path="/patients" element={<Patients />} />
                   <Route path="/visits" element={<MedicalVisits />} />

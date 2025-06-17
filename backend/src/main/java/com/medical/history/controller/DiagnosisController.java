@@ -18,16 +18,15 @@ import java.util.List;
 public class DiagnosisController {
     
     private final DiagnosisService diagnosisService;
-    
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<List<DiagnosisDto>> getAllDiagnoses() {
         List<DiagnosisDto> diagnoses = diagnosisService.getAllDiagnoses();
         return ResponseEntity.ok(diagnoses);
     }
-    
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<DiagnosisDto> getDiagnosisById(@PathVariable Long id) {
         return diagnosisService.getDiagnosisById(id)
                 .map(diagnosis -> ResponseEntity.ok(diagnosis))

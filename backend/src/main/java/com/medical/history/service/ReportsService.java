@@ -157,6 +157,80 @@ public class ReportsService {
         );
     }
     
+    // Get patients with most visits
+    public List<PatientVisitReport> getPatientsWithMostVisits() {
+        List<Object[]> results = patientRepository.findPatientsWithMostVisits();
+        return results.stream()
+                .map(result -> {
+                    Patient patient = (Patient) result[0];
+                    Long visitCount = (Long) result[1];
+                    PatientVisitReport report = new PatientVisitReport();
+                    report.setPatient(convertPatientToDto(patient));
+                    report.setVisitCount(visitCount.intValue());
+                    return report;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    // Get insurance payment statistics
+    public InsuranceStats getInsuranceStats() {
+        long paidCount = patientRepository.countPatientsWithPaidInsurance();
+        long unpaidCount = patientRepository.countPatientsWithUnpaidInsurance();
+        long totalPatients = patientRepository.count();
+        
+        double paymentRate = totalPatients > 0 ? (double) paidCount / totalPatients * 100 : 0;
+        
+        return new InsuranceStats(
+                (int) paidCount,
+                (int) unpaidCount,
+                Math.round(paymentRate * 100.0) / 100.0
+        );
+    }
+    
+    // Get detailed sick leave statistics with actual days
+    public List<SickLeaveDetailedReport> getDetailedSickLeavesByMonth() {
+        List<Object[]> results = sickLeaveRepository.findSickLeaveMonthlyStatistics();
+        return results.stream()
+                .map(result -> {
+                    Integer month = (Integer) result[0];
+                    Integer year = (Integer) result[1];
+                    Long count = (Long) result[2];
+                    Long totalDays = result[3] != null ? ((Number) result[3]).longValue() : 0L;
+                    Double avgDays = result[4] != null ? ((Number) result[4]).doubleValue() : 0.0;
+                    
+                    SickLeaveDetailedReport report = new SickLeaveDetailedReport();
+                    report.setMonth(month);
+                    report.setYear(year);
+                    report.setCount(count.intValue());
+                    report.setTotalDays(totalDays.intValue());
+                    report.setAverageDays(Math.round(avgDays * 100.0) / 100.0);
+                    
+                    return report;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    // Get detailed doctor sick leave statistics
+    public List<DoctorSickLeaveDetailedReport> getDetailedDoctorSickLeaveStats() {
+        List<Object[]> results = sickLeaveRepository.findDoctorSickLeaveStatistics();
+        return results.stream()
+                .map(result -> {
+                    Doctor doctor = (Doctor) result[0];
+                    Long count = (Long) result[1];
+                    Long totalDays = result[2] != null ? ((Number) result[2]).longValue() : 0L;
+                    Double avgDays = result[3] != null ? ((Number) result[3]).doubleValue() : 0.0;
+                    
+                    DoctorSickLeaveDetailedReport report = new DoctorSickLeaveDetailedReport();
+                    report.setDoctor(convertDoctorToDto(doctor));
+                    report.setSickLeaveCount(count.intValue());
+                    report.setTotalDays(totalDays.intValue());
+                    report.setAverageDays(Math.round(avgDays * 100.0) / 100.0);
+                    
+                    return report;
+                })
+                .collect(Collectors.toList());
+    }
+    
     // Helper methods for DTO conversion
     private PatientDto convertPatientToDto(Patient patient) {
         PatientDto dto = new PatientDto();
@@ -245,5 +319,41 @@ public class ReportsService {
             this.totalVisits = totalVisits;
             this.totalSickLeaves = totalSickLeaves;
         }
+    }
+    
+    @Data
+    public static class PatientVisitReport {
+        private PatientDto patient;
+        private int visitCount;
+    }
+    
+    @Data
+    public static class InsuranceStats {
+        private int paidCount;
+        private int unpaidCount;
+        private double paymentRate;
+        
+        public InsuranceStats(int paidCount, int unpaidCount, double paymentRate) {
+            this.paidCount = paidCount;
+            this.unpaidCount = unpaidCount;
+            this.paymentRate = paymentRate;
+        }
+    }
+    
+    @Data
+    public static class SickLeaveDetailedReport {
+        private int month;
+        private int year;
+        private int count;
+        private int totalDays;
+        private double averageDays;
+    }
+    
+    @Data
+    public static class DoctorSickLeaveDetailedReport {
+        private DoctorDto doctor;
+        private int sickLeaveCount;
+        private int totalDays;
+        private double averageDays;
     }
 }

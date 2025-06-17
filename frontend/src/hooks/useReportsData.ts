@@ -4,9 +4,12 @@ import {
   useGetMostCommonDiagnosesQuery,
   useGetFamilyDoctorPatientCountsQuery,
   useGetDoctorVisitCountsQuery,
-  useGetSickLeavesByMonthQuery,
   useGetDoctorsWithMostSickLeavesQuery,
   useGetVisitsByDateRangeQuery,
+  useGetPatientsWithMostVisitsQuery,
+  useGetInsuranceStatsQuery,
+  useGetDetailedSickLeavesByMonthQuery,
+  useGetDetailedDoctorSickLeaveStatsQuery,
 } from '../store/reportsApi';
 import { useGetDoctorsQuery } from '../store/doctorsApi';
 
@@ -95,12 +98,7 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     refetch: refetchDoctorVisits,
   } = useGetDoctorVisitCountsQuery();
 
-  const {
-    data: sickLeavesByMonth,
-    isLoading: isSickLeavesLoading,
-    error: sickLeavesError,
-    refetch: refetchSickLeaves,
-  } = useGetSickLeavesByMonthQuery();
+  // Removed unused hook - using detailed sick leaves instead
 
   const {
     data: doctorsSickLeaves,
@@ -137,26 +135,61 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     { skip: !dateRangeQuery }
   );
 
+  // New detailed API calls
+  const {
+    data: patientsWithMostVisits,
+    isLoading: isPatientsVisitsLoading,
+    error: patientsVisitsError,
+    refetch: refetchPatientsVisits,
+  } = useGetPatientsWithMostVisitsQuery();
+
+  const {
+    data: insuranceStats,
+    isLoading: isInsuranceLoading,
+    error: insuranceError,
+    refetch: refetchInsurance,
+  } = useGetInsuranceStatsQuery();
+
+  const {
+    data: detailedSickLeavesByMonth,
+    isLoading: isDetailedSickLeavesLoading,
+    error: detailedSickLeavesError,
+    refetch: refetchDetailedSickLeaves,
+  } = useGetDetailedSickLeavesByMonthQuery();
+
+  const {
+    data: detailedDoctorSickLeaveStats,
+    isLoading: isDetailedDoctorSickLeavesLoading,
+    error: detailedDoctorSickLeavesError,
+    refetch: refetchDetailedDoctorSickLeaves,
+  } = useGetDetailedDoctorSickLeaveStatsQuery();
+
   const isLoading = useMemo(() => {
     return (
       isDashboardLoading ||
       isDiagnosesLoading ||
       isFamilyDoctorLoading ||
       isDoctorVisitsLoading ||
-      isSickLeavesLoading ||
       isDoctorsSickLeavesLoading ||
       isDoctorsLoading ||
-      isVisitsLoading
+      isVisitsLoading ||
+      isPatientsVisitsLoading ||
+      isInsuranceLoading ||
+      isDetailedSickLeavesLoading ||
+      isDetailedDoctorSickLeavesLoading
     );
   }, [
     isDashboardLoading,
     isDiagnosesLoading,
     isFamilyDoctorLoading,
     isDoctorVisitsLoading,
-    isSickLeavesLoading,
     isDoctorsSickLeavesLoading,
     isDoctorsLoading,
     isVisitsLoading,
+    isPatientsVisitsLoading,
+    isInsuranceLoading,
+    isDetailedSickLeavesLoading,
+    isDetailedDoctorSickLeavesLoading,
   ]);
 
   const error = useMemo(() => {
@@ -165,10 +198,13 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
       diagnosesError,
       familyDoctorError,
       doctorVisitsError,
-      sickLeavesError,
       doctorsSickLeavesError,
       doctorsError,
       visitsError,
+      patientsVisitsError,
+      insuranceError,
+      detailedSickLeavesError,
+      detailedDoctorSickLeavesError,
     ].filter(Boolean);
 
     if (errors.length > 0) {
@@ -180,10 +216,13 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     diagnosesError,
     familyDoctorError,
     doctorVisitsError,
-    sickLeavesError,
     doctorsSickLeavesError,
     doctorsError,
     visitsError,
+    patientsVisitsError,
+    insuranceError,
+    detailedSickLeavesError,
+    detailedDoctorSickLeavesError,
   ]);
 
   const refetch = () => {
@@ -191,10 +230,13 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     refetchDiagnoses();
     refetchFamilyDoctor();
     refetchDoctorVisits();
-    refetchSickLeaves();
     refetchDoctorsSickLeaves();
     refetchDoctors();
     refetchVisits();
+    refetchPatientsVisits();
+    refetchInsurance();
+    refetchDetailedSickLeaves();
+    refetchDetailedDoctorSickLeaves();
   };
 
   const processedData = useMemo((): ProcessedReportsData | null => {
@@ -246,55 +288,56 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     const processedPatientsByFamilyDoctor = familyDoctorCounts?.map(item => ({
       doctorName: item.doctor.name,
       totalPatients: item.patientCount,
-      paidInsuranceCount: Math.floor(item.patientCount * 0.85), // Mock paid insurance data
+      paidInsuranceCount: Math.floor(item.patientCount * (insuranceStats?.paymentRate || 85) / 100),
     })) || [];
 
-    // Mock insurance stats (would need real data from backend)
-    const insuranceStats = {
-      paidCount: Math.floor(dashboardStats.totalPatients * 0.85),
-      unpaidCount: Math.floor(dashboardStats.totalPatients * 0.15),
-      paymentRate: 85,
+    // Use real insurance stats from API
+    const processedInsuranceStats = insuranceStats || {
+      paidCount: 0,
+      unpaidCount: 0,
+      paymentRate: 0,
     };
 
-    // Mock patients with most visits (would need real data from backend)
-    const patientsWithMostVisits = [
-      { patientName: 'John Doe', visitCount: 8, lastVisitDate: '2024-01-15' },
-      { patientName: 'Jane Smith', visitCount: 6, lastVisitDate: '2024-01-20' },
-    ];
+    // Use real patients with most visits data
+    const processedPatientsWithMostVisits = patientsWithMostVisits?.map(item => ({
+      patientName: item.patient.name,
+      visitCount: item.visitCount,
+      lastVisitDate: new Date().toISOString().split('T')[0], // Note: Need to add last visit date to backend
+    })) || [];
 
-    // Process sick leave by month
-    const processedSickLeaveByMonth = sickLeavesByMonth?.map((item, index) => ({
+    // Process sick leave by month using detailed data
+    const processedSickLeaveByMonth = detailedSickLeavesByMonth?.map((item, index) => ({
       id: index + 1,
       month: `${monthNames[item.month - 1]} ${item.year}`,
       count: item.count,
-      totalDays: item.count * 7, // Mock total days
-      averageDays: 7, // Mock average days
+      totalDays: item.totalDays,
+      averageDays: item.averageDays,
     })) || [];
 
-    // Process doctors sick leave stats
-    const processedDoctorsSickLeaveStats = doctorsSickLeaves?.map(item => ({
+    // Process doctors sick leave stats using detailed data
+    const processedDoctorsSickLeaveStats = detailedDoctorSickLeaveStats?.map(item => ({
       doctorName: item.doctor.name,
       sickLeaveCount: item.sickLeaveCount,
-      totalDays: item.sickLeaveCount * 7, // Mock total days
-      averageDays: 7.0, // Mock average days
+      totalDays: item.totalDays,
+      averageDays: item.averageDays,
     })) || [];
 
-    // Mock visit statistics (would need real data from backend)
+    // Process visits by date range - improve data handling
     const processedVisitsByDateRange = visitsByDateRange?.map((visit, index) => ({
       id: index + 1,
       visitDate: visit.visitDate || new Date().toISOString().split('T')[0],
-      visitCount: 25, // Mock data
-      uniquePatients: 20, // Mock data
-      uniqueDoctors: 8, // Mock data
-      sickLeavesIssued: 3, // Mock data
+      visitCount: visit.visitCount || 0,
+      uniquePatients: visit.uniquePatients || 0,
+      uniqueDoctors: visit.uniqueDoctors || 0,
+      sickLeavesIssued: visit.sickLeavesIssued || 0,
     })) || [];
 
-    // Mock peak visit hours
+    // Note: This should be real data from backend - peak visit hours analysis
     const peakVisitHours = [
-      { hour: 9, count: 45, percentage: 15.2 },
-      { hour: 10, count: 52, percentage: 17.6 },
-      { hour: 11, count: 48, percentage: 16.2 },
-      { hour: 14, count: 41, percentage: 13.9 },
+      { hour: 9, count: 0, percentage: 0 },
+      { hour: 10, count: 0, percentage: 0 },
+      { hour: 11, count: 0, percentage: 0 },
+      { hour: 14, count: 0, percentage: 0 },
     ];
 
     return {
@@ -307,8 +350,8 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
       patientsByDiagnosis: processedPatientsByDiagnosis,
       doctorStatistics: processedDoctorStats,
       patientsByFamilyDoctor: processedPatientsByFamilyDoctor,
-      insuranceStats,
-      patientsWithMostVisits,
+      insuranceStats: processedInsuranceStats,
+      patientsWithMostVisits: processedPatientsWithMostVisits,
       sickLeaveByMonth: processedSickLeaveByMonth,
       doctorsSickLeaveStats: processedDoctorsSickLeaveStats,
       visitsByDateRange: processedVisitsByDateRange,
@@ -321,8 +364,11 @@ export const useReportsData = (filters: ReportsFilters): UseReportsDataResult =>
     familyDoctorCounts,
     doctorVisitCounts,
     doctorsSickLeaves,
-    sickLeavesByMonth,
     visitsByDateRange,
+    patientsWithMostVisits,
+    insuranceStats,
+    detailedSickLeavesByMonth,
+    detailedDoctorSickLeaveStats,
   ]);
 
   return {

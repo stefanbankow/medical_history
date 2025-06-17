@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 
 import { 
   useGetMedicalVisitsQuery, 
+  useGetMedicalVisitsByDoctorQuery,
+  useGetMedicalVisitsByPatientQuery,
   useCreateMedicalVisitMutation, 
   useUpdateMedicalVisitMutation, 
   useDeleteMedicalVisitMutation 
@@ -33,10 +35,48 @@ const MedicalVisits: React.FC = () => {
   const [viewingVisit, setViewingVisit] = useState<MedicalVisit | null>(null);
   const [deletingVisit, setDeletingVisit] = useState<MedicalVisit | null>(null);
 
-  const { data: visits = [], isLoading, error } = useGetMedicalVisitsQuery();
-  const { data: patients = [] } = useGetPatientsQuery();
-  const { data: doctors = [] } = useGetDoctorsQuery();
-  const { data: diagnoses = [] } = useGetDiagnosesQuery();
+  // Use role-specific API calls
+  const { 
+    data: allVisits = [], 
+    isLoading: isLoadingAll, 
+    error: errorAll 
+  } = useGetMedicalVisitsQuery(undefined, { 
+    skip: !isAdmin() 
+  });
+  
+  const { 
+    data: doctorVisits = [], 
+    isLoading: isLoadingDoctor, 
+    error: errorDoctor 
+  } = useGetMedicalVisitsByDoctorQuery(user?.doctorId || 0, { 
+    skip: !isDoctor() || !user?.doctorId 
+  });
+  
+  const { 
+    data: patientVisits = [], 
+    isLoading: isLoadingPatient, 
+    error: errorPatient 
+  } = useGetMedicalVisitsByPatientQuery(user?.patientId || 0, { 
+    skip: !isPatient() || !user?.patientId 
+  });
+
+  // Get the appropriate data based on role
+  const visits = isAdmin() ? allVisits : isDoctor() ? doctorVisits : patientVisits;
+  const isLoading = isAdmin() ? isLoadingAll : isDoctor() ? isLoadingDoctor : isLoadingPatient;
+  const error = isAdmin() ? errorAll : isDoctor() ? errorDoctor : errorPatient;
+
+  // Load additional data based on role
+  const { data: patients = [] } = useGetPatientsQuery(undefined, { 
+    skip: isPatient() // Patients don't need patient list
+  });
+  
+  const { data: doctors = [] } = useGetDoctorsQuery(undefined, { 
+    skip: false // All roles can see doctors
+  });
+  
+  const { data: diagnoses = [] } = useGetDiagnosesQuery(undefined, { 
+    skip: false // All roles need diagnosis list
+  });
   const [createVisit, { isLoading: isCreating }] = useCreateMedicalVisitMutation();
   const [updateVisit, { isLoading: isUpdating }] = useUpdateMedicalVisitMutation();
   const [deleteVisit, { isLoading: isDeleting }] = useDeleteMedicalVisitMutation();
@@ -55,20 +95,27 @@ const MedicalVisits: React.FC = () => {
     },
   });
 
-  // Filter visits based on user role
-  const filteredVisits = React.useMemo(() => {
-    if (isAdmin()) {
-      return visits;
-    } else if (isDoctor() && user?.doctorId) {
-      return visits.filter((v: MedicalVisit) => v.doctorId === user.doctorId);
-    } else if (isPatient() && user?.patientId) {
-      return visits.filter((v: MedicalVisit) => v.patientId === user.patientId);
-    }
-    return [];
-  }, [visits, user, isAdmin, isDoctor, isPatient]);
-
   const handleCreate = () => {
     setEditingVisit(null);
+    
+    // Set default patient and doctor based on user role
+    let defaultPatientId = 0;
+    let defaultDoctorId = 0;
+    
+    if (isPatient() && user?.patientId) {
+      defaultPatientId = user.patientId;
+    } else if (patients.length > 0) {
+      defaultPatientId = patients[0].id;
+    }
+    
+    if (isDoctor() && user?.doctorId) {
+      defaultDoctorId = user.doctorId;
+    } else if (doctors.length > 0) {
+      defaultDoctorId = doctors[0].id;
+    }
+    
+    console.log('Setting form defaults:', { defaultPatientId, defaultDoctorId, isPatient: isPatient(), isDoctor: isDoctor() });
+    
     form.reset({
       visitDate: new Date(),
       visitTime: null,
@@ -76,8 +123,8 @@ const MedicalVisits: React.FC = () => {
       treatment: '',
       prescribedMedication: '',
       notes: '',
-      patientId: user?.patientId || 0,
-      doctorId: user?.doctorId || 0,
+      patientId: defaultPatientId,
+      doctorId: defaultDoctorId,
       diagnosisId: 0,
     });
     setFormOpen(true);
@@ -111,8 +158,26 @@ const MedicalVisits: React.FC = () => {
 
   const handleFormSubmit = async (data: MedicalVisitFormData) => {
     try {
+      console.log('Form data before processing:', data);
+      
+      // Validate required fields
+      if (!data.visitDate) {
+        console.error('Visit date is required');
+        return;
+      }
+      
+      if (!data.patientId || data.patientId === 0) {
+        console.error('Patient selection is required');
+        return;
+      }
+      
+      if (!data.doctorId || data.doctorId === 0) {
+        console.error('Doctor selection is required');
+        return;
+      }
+      
       const visitData = {
-        visitDate: data.visitDate ? format(data.visitDate, 'yyyy-MM-dd') : '',
+        visitDate: format(data.visitDate, 'yyyy-MM-dd'),
         visitTime: data.visitTime ? format(data.visitTime, 'HH:mm:ss') : undefined,
         symptoms: data.symptoms || '',
         treatment: data.treatment || '',
@@ -123,10 +188,15 @@ const MedicalVisits: React.FC = () => {
         diagnosisId: data.diagnosisId && data.diagnosisId > 0 ? data.diagnosisId : undefined,
       };
 
+      console.log('Processed visit data:', visitData);
+
       if (editingVisit) {
+        console.log('Updating visit:', editingVisit.id);
         await updateVisit({ id: editingVisit.id, visit: visitData }).unwrap();
       } else {
-        await createVisit(visitData).unwrap();
+        console.log('Creating new visit');
+        const result = await createVisit(visitData).unwrap();
+        console.log('Visit created successfully:', result);
       }
       setFormOpen(false);
     } catch (error) {
@@ -219,14 +289,14 @@ const MedicalVisits: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <PageHeader
-        title="Medical Visits"
+        title={isPatient() ? "My Medical Visits" : "Medical Visits"}
         onAdd={isAdmin() || isDoctor() || isPatient() ? handleCreate : undefined}
-        addButtonText="Add Visit"
+        addButtonText={isPatient() ? "Request Visit" : "Add Visit"}
         showAddButton={isAdmin() || isDoctor() || isPatient()}
       />
 
       <DataTable
-        rows={filteredVisits}
+        rows={visits}
         columns={columns}
         loading={isLoading}
       />

@@ -70,7 +70,7 @@ public class MedicalVisitController {
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<MedicalVisitDto> createMedicalVisit(@Valid @RequestBody MedicalVisitDto visitDto) {
         try {
             MedicalVisitDto createdVisit = medicalVisitService.createMedicalVisit(visitDto);

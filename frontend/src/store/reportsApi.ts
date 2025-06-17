@@ -102,6 +102,45 @@ export const reportsApi = api.injectEndpoints({
       query: () => '/reports/dashboard-stats',
       providesTags: ['Reports'],
     }),
+    
+    // New detailed reports
+    getPatientsWithMostVisits: builder.query<Array<{
+      patient: { id: number; name: string; egn: string };
+      visitCount: number;
+    }>, void>({
+      query: () => '/reports/patients-most-visits',
+      providesTags: ['Reports'],
+    }),
+    
+    getInsuranceStats: builder.query<{
+      paidCount: number;
+      unpaidCount: number;
+      paymentRate: number;
+    }, void>({
+      query: () => '/reports/insurance-stats',
+      providesTags: ['Reports'],
+    }),
+    
+    getDetailedSickLeavesByMonth: builder.query<Array<{
+      month: number;
+      year: number;
+      count: number;
+      totalDays: number;
+      averageDays: number;
+    }>, void>({
+      query: () => '/reports/sick-leaves-detailed-monthly',
+      providesTags: ['Reports'],
+    }),
+    
+    getDetailedDoctorSickLeaveStats: builder.query<Array<{
+      doctor: { id: number; name: string; specialty: string };
+      sickLeaveCount: number;
+      totalDays: number;
+      averageDays: number;
+    }>, void>({
+      query: () => '/reports/doctors-sick-leaves-detailed',
+      providesTags: ['Reports'],
+    }),
   }),
 });
 
@@ -117,4 +156,8 @@ export const {
   useGetDoctorsWithMostSickLeavesQuery,
   useGetSickLeavesByMonthQuery,
   useGetDashboardStatsQuery,
+  useGetPatientsWithMostVisitsQuery,
+  useGetInsuranceStatsQuery,
+  useGetDetailedSickLeavesByMonthQuery,
+  useGetDetailedDoctorSickLeaveStatsQuery,
 } = reportsApi;

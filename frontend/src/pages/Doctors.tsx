@@ -37,7 +37,7 @@ const Doctors: React.FC = () => {
   const [updateDoctor] = useUpdateDoctorMutation();
   const [deleteDoctor] = useDeleteDoctorMutation();
   
-  const { canEditAllData, canViewAllData } = useAuth();
+  const { canEditAllData, canViewAllData, isPatient } = useAuth();
   
   const [open, setOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
@@ -145,18 +145,21 @@ const Doctors: React.FC = () => {
         />
       ),
     },
-    {
-      field: 'patientCount',
-      headerName: 'Patients',
-      width: 100,
-      type: 'number',
-    },
-    {
-      field: 'visitCount',
-      headerName: 'Visits',
-      width: 100,
-      type: 'number',
-    },
+    // Hide patient and visit counts from patients
+    ...(isPatient() ? [] : [
+      {
+        field: 'patientCount',
+        headerName: 'Patients',
+        width: 100,
+        type: 'number' as const,
+      },
+      {
+        field: 'visitCount',
+        headerName: 'Visits',
+        width: 100,
+        type: 'number' as const,
+      },
+    ]),
     {
       field: 'actions',
       type: 'actions',
@@ -176,6 +179,7 @@ const Doctors: React.FC = () => {
           />,
         ];
 
+        // Only admins can edit/delete doctors
         if (canEditAllData()) {
           actions.push(
             <GridActionsCellItem
@@ -209,7 +213,7 @@ const Doctors: React.FC = () => {
     },
   ];
 
-  if (!canViewAllData()) {
+  if (!canViewAllData() && !isPatient()) {
     return (
       <Box>
         <Alert severity="warning">
@@ -222,7 +226,7 @@ const Doctors: React.FC = () => {
   return (
     <Box>
       <PageHeader
-        title="Doctors Management"
+        title={isPatient() ? "Doctors" : "Doctors Management"}
         onAdd={canEditAllData() ? () => handleOpenDialog() : undefined}
         addButtonText="Add Doctor"
         showAddButton={canEditAllData()}

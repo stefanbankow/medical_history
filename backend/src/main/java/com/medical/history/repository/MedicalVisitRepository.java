@@ -46,4 +46,25 @@ public interface MedicalVisitRepository extends JpaRepository<MedicalVisit, Long
            "GROUP BY mv.doctor " +
            "ORDER BY COUNT(mv) DESC")
     List<Object[]> findDoctorVisitCounts();
+    
+    @Query("SELECT mv.patient, COUNT(mv) as visitCount FROM MedicalVisit mv " +
+           "GROUP BY mv.patient " +
+           "ORDER BY COUNT(mv) DESC")
+    List<Object[]> findPatientVisitCounts();
+    
+    @Query("SELECT EXTRACT(HOUR FROM mv.visitTime) as hour, COUNT(mv) as count " +
+           "FROM MedicalVisit mv " +
+           "WHERE mv.visitTime IS NOT NULL " +
+           "GROUP BY EXTRACT(HOUR FROM mv.visitTime) " +
+           "ORDER BY COUNT(mv) DESC")
+    List<Object[]> findPeakVisitHours();
+    
+    @Query("SELECT mv.visitDate, COUNT(mv), " +
+           "COUNT(DISTINCT mv.patient), COUNT(DISTINCT mv.doctor) " +
+           "FROM MedicalVisit mv " +
+           "WHERE mv.visitDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY mv.visitDate " +
+           "ORDER BY mv.visitDate")
+    List<Object[]> findVisitStatsByDateRange(@Param("startDate") LocalDate startDate,
+                                             @Param("endDate") LocalDate endDate);
 }
