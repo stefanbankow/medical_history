@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/doctors")
+@RequestMapping("/doctors")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 @Tag(name = "Doctor Management", description = "Doctor management APIs")
 public class DoctorController {
-    
+
     private final DoctorService doctorService;
-    
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get all doctors")
@@ -29,7 +29,7 @@ public class DoctorController {
         List<DoctorDto> doctors = doctorService.getAllDoctors();
         return ResponseEntity.ok(doctors);
     }
-    
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get doctor by ID")
@@ -38,7 +38,7 @@ public class DoctorController {
                 .map(doctor -> ResponseEntity.ok(doctor))
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/identification/{identificationNumber}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get doctor by identification number")
@@ -47,7 +47,7 @@ public class DoctorController {
                 .map(doctor -> ResponseEntity.ok(doctor))
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/family-doctors")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     @Operation(summary = "Get all family doctors")
@@ -55,7 +55,7 @@ public class DoctorController {
         List<DoctorDto> familyDoctors = doctorService.getFamilyDoctors();
         return ResponseEntity.ok(familyDoctors);
     }
-    
+
     @GetMapping("/specialty/{specialty}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get doctors by specialty")
@@ -63,7 +63,7 @@ public class DoctorController {
         List<DoctorDto> doctors = doctorService.getDoctorsBySpecialty(specialty);
         return ResponseEntity.ok(doctors);
     }
-    
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new doctor")
@@ -71,7 +71,7 @@ public class DoctorController {
         DoctorDto createdDoctor = doctorService.createDoctor(doctorDto);
         return new ResponseEntity<>(createdDoctor, HttpStatus.CREATED);
     }
-    
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update doctor")
@@ -80,7 +80,7 @@ public class DoctorController {
                 .map(doctor -> ResponseEntity.ok(doctor))
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete doctor")
@@ -90,7 +90,7 @@ public class DoctorController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     @GetMapping("/stats/by-patient-count")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get doctors ordered by patient count")
@@ -98,7 +98,7 @@ public class DoctorController {
         List<DoctorDto> doctors = doctorService.getDoctorsOrderedByPatientCount();
         return ResponseEntity.ok(doctors);
     }
-    
+
     @GetMapping("/stats/by-visit-count")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @Operation(summary = "Get doctors ordered by visit count")
